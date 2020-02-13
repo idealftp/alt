@@ -2,7 +2,7 @@
 
 import os
 from flask import Flask, flash, request, redirect, url_for, send_from_directory
-from flask_pymongo import Pymongo
+from flask_pymongo import PyMongo
 from werkzeug.utils import secure_filename
 
 # UPLOAD_dossier = 'uploads/'
@@ -12,33 +12,34 @@ ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'svg'])
 
 app = Flask(__name__)
 app.config['MONGO_URI']= 'mongodb://192.168.150.110:27017'
-mongo = Pymongo(app)
+mongo = PyMongo(app)
 
 def fichier_autorise(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-@app.route('/', methods=['POST'])
+@app.route('/', methods=['GET', 'POST'])
 def telechargeFichier():
-    if 'file' not in request.files:
-        flash('No File Part')
-        print('2')
-        return redirect(request.url)
-    file= request.files['file']
-    if file.filename=='':
-        flash('no selected file')
-        return redirect(request.url)
-    if file and fichier_autorise(file.filename):
-        mongo.save_ffile(file.filename, file)
-        mongo.db.users.insert({'username': 'root', 'image': file.filename})
+	if request.methods == "POST":
+    	if 'file' not in request.files:
+        	flash('No File Part')
+        	print('2')
+        	return redirect(request.url)
+    	file= request.files['file']
+    	if file.filename=='':
+        	flash('no selected file')
+        	return redirect(request.url)
+    	if file and fichier_autorise(file.filename):
+        	mongo.save_ffile(file.filename, file)
+        	mongo.db.users.insert({'username': 'root', 'image': file.filename})
 
-        return 'ok'
+        	return 'ok'
         # filename= secure_filename(file.filename)
         # file.save(os.path.join(app.config['UPLOAD_dossier'], filename))
 
         # return os.popen(f"python3 predict_it.py 'uploads/{filename}'").read()
-        
+
 
     return '''
         <!doctype html>
