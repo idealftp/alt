@@ -11,7 +11,7 @@ ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'svg'])
 #les extensions autorisés à être télécharger (ici on n'accepte que des images de type png, jpg, jpeg)
 
 app = Flask(__name__)
-app.config['MONGO_URI']= 'mongodb://192.168.150.110:27017'
+app.config['MONGO_URI']= 'mongodb://192.168.150.110:27017/firstDb'
 mongo = PyMongo(app)
 
 def fichier_autorise(filename):
@@ -21,19 +21,14 @@ def fichier_autorise(filename):
 
 @app.route('/', methods=['GET', 'POST'])
 def telechargeFichier():
-    if request.methods == "POST":
-        if 'file' not in request.files:
-        	flash('No File Part')
-        	return redirect(request.url)
+    if request.method == "POST":
         file = request.files['file']
-        if file.filename=='':
-        	flash('no selected file')
-        	return redirect(request.url)
         if file and fichier_autorise(file.filename):
-            mongo.save_ffile(file.filename, file)
-            mongo.db.users.insert({'username': 'root', 'image': file.filename})
-            return 'ok'
-            
+            print('ito e >>', file.filename)
+            mongo.save_file(file.filename, file)
+            mongo.db['files'].insert({'username': 'root', 'image': file.filename})
+            return  'ok'
+
     return '''
         <!doctype html>
         <title>Upload new File</title>
