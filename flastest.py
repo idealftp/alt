@@ -21,24 +21,24 @@ def fichier_autorise(filename):
 
 @app.route('/', methods=['POST'])
 def telechargeFichier():
-        if 'file' not in request.files:
-            flash('No File Part')
-            print('2')
-            return redirect(request.url)
-        file= request.files['file']
-        if file.filename=='':
-            flash('no selected file')
-            return redirect(request.url)
-        if file and fichier_autorise(file.filename):
-            mongo.save_ffile(file.filename, file)
-            mongo.db.users.insert({'username': 'root', 'image': file.filename})
+    if 'file' not in request.files:
+        flash('No File Part')
+        print('2')
+        return redirect(request.url)
+    file= request.files['file']
+    if file.filename=='':
+        flash('no selected file')
+        return redirect(request.url)
+    if file and fichier_autorise(file.filename):
+        mongo.save_ffile(file.filename, file)
+        mongo.db.users.insert({'username': 'root', 'image': file.filename})
 
-            return 'ok'
-            # filename= secure_filename(file.filename)
-            # file.save(os.path.join(app.config['UPLOAD_dossier'], filename))
+        return 'ok'
+        # filename= secure_filename(file.filename)
+        # file.save(os.path.join(app.config['UPLOAD_dossier'], filename))
 
-            # return os.popen(f"python3 predict_it.py 'uploads/{filename}'").read()
-         
+        # return os.popen(f"python3 predict_it.py 'uploads/{filename}'").read()
+        
 
     return '''
         <!doctype html>
