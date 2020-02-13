@@ -21,26 +21,19 @@ def fichier_autorise(filename):
 
 @app.route('/', methods=['GET', 'POST'])
 def telechargeFichier():
-	if request.methods == "POST":
-    	if 'file' not in request.files:
+    if request.methods == "POST":
+        if 'file' not in request.files:
         	flash('No File Part')
-        	print('2')
         	return redirect(request.url)
-    	file= request.files['file']
-    	if file.filename=='':
+        file = request.files['file']
+        if file.filename=='':
         	flash('no selected file')
         	return redirect(request.url)
-    	if file and fichier_autorise(file.filename):
-        	mongo.save_ffile(file.filename, file)
-        	mongo.db.users.insert({'username': 'root', 'image': file.filename})
-
-        	return 'ok'
-        # filename= secure_filename(file.filename)
-        # file.save(os.path.join(app.config['UPLOAD_dossier'], filename))
-
-        # return os.popen(f"python3 predict_it.py 'uploads/{filename}'").read()
-
-
+        if file and fichier_autorise(file.filename):
+            mongo.save_ffile(file.filename, file)
+            mongo.db.users.insert({'username': 'root', 'image': file.filename})
+            return 'ok'
+            
     return '''
         <!doctype html>
         <title>Upload new File</title>
@@ -50,6 +43,8 @@ def telechargeFichier():
           <input type="submit" value="Upload" />
         </form>
         '''
+
+
 if __name__ == "__main__":
     app.secret_key = 'secret'
     app.debug = True
