@@ -1,5 +1,7 @@
 # sys.path.append('.\env\Lib\site-packages')
+
 import sys
+import os
 from keras.models import  Sequential
 from keras.layers import Conv2D, MaxPooling2D
 from keras.layers import Flatten, Dense
@@ -18,3 +20,4 @@ def whatis():
 
 if __name__ == '__main__':
     print(whatis())
+    os.system("rm tmp.png")
