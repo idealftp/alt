@@ -1,66 +1,47 @@
+#-*- coding: utf-8 -*-
+
 import os
+from pymongo import MongoClient
+import gridfs
+from keras.models import  Sequential
+from keras.layers import Conv2D, MaxPooling2D
+from keras.layers import Flatten, Dense
 from keras.applications.vgg16 import VGG16, preprocess_input, decode_predictions
 from keras.preprocessing.image import load_img, img_to_array
 from flask import Flask, flash, request, redirect, url_for, send_from_directory
-from werkzeug.utils import secure_filename
+from flask_pymongo import PyMongo
+# from werkzeug.utils import secure_filename
 
-UPLOAD_dossier = 'E:/pred/simple-keras-rest-api/uploads/'
+# UPLOAD_dossier = 'uploads/'
 #dossier destination des téléchargements
-ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg'])
+ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'svg'])
 #les extensions autorisés à être télécharger (ici on n'accepte que des images de type png, jpg, jpeg)
 
-app= Flask(__name__)
-app.config['UPLOAD_dossier']= UPLOAD_dossier
+app = Flask(__name__)
+database = MongoClient('127.0.0.1:27017').firstDb
+app.config['MONGO_URI']= 'mongodb://192.168.150.110:27017/firstDb'
+mongo = PyMongo(app)
+
+def pred(fln):
+    fs = gridfs.GridFS(database)
+    with open('tmp.png', 'wb') as file_tmp:
+        file_tmp.write(fs.find_one({'filename':fln}).read())
+    return os.popen(f"python3 predict_it.py").read()
+
 
 def fichier_autorise(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def predict(file):
-    model = VGG16()
-    img = load_img(UPLOAD_dossier+file, target_size=(224, 224))  # charger l'image
-    img = img_to_array(img)  # convertir le tableau en numpy
-    img = img.reshape((1, img.shape[0], img.shape[1], img.shape[2]))  # creer la collection d'image
-    img = preprocess_input(img)  # pretraiter l'image
-    y = model.predict(img)  # predire la classe de l'image
-    print('top 7:', decode_predictions(y, top=7)[0])  # ici on affiche que les tops 3 des prédictions, on peut changer
-    # le decode predictions de keras retourne 1Class name, 2 class description, 3 score
-
-@app.route('/uploads/<filename>')
-def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_dossier'], filename)
 
 @app.route('/', methods=['GET', 'POST'])
 def telechargeFichier():
-    if request.method == 'POST':
-        #vérifier si il y a un fichier
-        print('1')
-        if 'file' not in request.files:
-            flash('No File Part')
-            print('2')
-            return redirect(request.url)
-        file= request.files['file']
-        if file.filename=='':
-            flash('no selected file')
-            print('3')
-            return redirect(request.url)
+    if request.method == "POST":
+        file = request.files['file']
         if file and fichier_autorise(file.filename):
-            filename= secure_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_dossier'], filename))
-            #je sauvegarde le fichier à uploader dans un dossier indiqué dans le path en haut
-            print('4')
-            print(file)
-            print(filename) # filename le nom du fichier téléchargé (ici on n'accepte que des images de type png, jpg, jpeg)
-            predict(filename)
-            return redirect(url_for('uploaded_file', filename=filename))
-            # à la fin de l'upload , je redirige le client à l'image uploader
-            #os.remove(filename) supprimer le fichier  télécharger après prediction
-
-        # return "Vous avez envoyé : {message}".format(message=request.files['contenuFormu'])
-        #on utilise request.form pour les types text, request.file pour les types fichiers d'un formulaire
-        #ici le message c'est le nom du variable à retourn au client
-        # le contenForm c'est l'id du fich que le client a choisi
-        # pour input, type text pour les textes et type file pour les fichi
+            # with open('test.save', 'wb') as f:
+            #     f.write(mongo.send_file(file.filename).data)
+            return pred(file.filename)
 
     return '''
         <!doctype html>
@@ -71,7 +52,9 @@ def telechargeFichier():
           <input type="submit" value="Upload" />
         </form>
         '''
+
+
 if __name__ == "__main__":
     app.secret_key = 'secret'
     app.debug = True
-    app.run()
+    app.run(host='0.0.0.0', port=80, threaded=False)
