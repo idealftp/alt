@@ -4,6 +4,7 @@ from keras.layers.normalization import BatchNormalization
 from keras import optimizers
 from keras.preprocessing.image import ImageDataGenerator
 from keras.callbacks import ModelCheckpoint
+import numpy as np
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -20,19 +21,19 @@ classifier.add(MaxPooling2D(pool_size = (2, 2), strides = (2, 2), padding = 'val
 classifier.add(BatchNormalization())
 
 # Convolution Step 2
-#classifier.add(Convolution2D(256, 11, strides = (1, 1), padding='valid', activation = 'relu'))
+classifier.add(Convolution2D(256, 11, strides = (1, 1), padding='valid', activation = 'relu'))
 
 # Max Pooling Step 2
-#classifier.add(MaxPooling2D(pool_size = (2, 2), strides = (2, 2), padding='valid'))
-#classifier.add(BatchNormalization())
+classifier.add(MaxPooling2D(pool_size = (2, 2), strides = (2, 2), padding='valid'))
+classifier.add(BatchNormalization())
 
 # Convolution Step 3
-#classifier.add(Convolution2D(384, 3, strides = (1, 1), padding='valid', activation = 'relu'))
-#classifier.add(BatchNormalization())
+classifier.add(Convolution2D(384, 3, strides = (1, 1), padding='valid', activation = 'relu'))
+classifier.add(BatchNormalization())
 
 # Convolution Step 4
-#classifier.add(Convolution2D(384, 3, strides = (1, 1), padding='valid', activation = 'relu'))
-#classifier.add(BatchNormalization())
+classifier.add(Convolution2D(384, 3, strides = (1, 1), padding='valid', activation = 'relu'))
+classifier.add(BatchNormalization())
 
 # Convolution Step 5
 classifier.add(Convolution2D(256, 3, strides=(1,1), padding='valid', activation = 'relu'))
@@ -45,15 +46,15 @@ classifier.add(BatchNormalization())
 classifier.add(Flatten())
 
 # Full Connection Step
-#classifier.add(Dense(units = 4096, activation = 'relu'))
-#classifier.add(Dropout(0.4))
-#classifier.add(BatchNormalization())
-#classifier.add(Dense(units = 4096, activation = 'relu'))
-#classifier.add(Dropout(0.4))
-#classifier.add(BatchNormalization())
-#classifier.add(Dense(units = 1000, activation = 'relu'))
+classifier.add(Dense(units = 4096, activation = 'relu'))
+classifier.add(Dropout(0.4))
+classifier.add(BatchNormalization())
+classifier.add(Dense(units = 4096, activation = 'relu'))
+classifier.add(Dropout(0.4))
+classifier.add(BatchNormalization())
+classifier.add(Dense(units = 1000, activation = 'relu'))
 classifier.add(Dropout(0.2))
-#classifier.add(BatchNormalization())
+classifier.add(BatchNormalization())
 classifier.add(Dense(units = 2, activation = 'softmax'))
 
 classifier.summary()
@@ -98,29 +99,44 @@ test_set = test_datagen.flow_from_directory(test_data_dir,
                                             class_mode='categorical')
 
 print(training_set.class_indices)
-""" 
+stps = training_set.samples//batch_size
 history = classifier.fit_generator(training_set,
-                                   steps_per_epoch=training_set.samples//batch_size,
+                                   steps_per_epoch=32,
                                    validation_data=test_set,
                                    epochs=500,
-                                   validation_steps=test_set.samples//batch_size) """
+                                   validation_steps=test_set.samples//batch_size)
 
 #saving the model
 filepath="model.hdf5"
-classifier.save(filepath)
+classifier.save_weights(filepath)
 classifier.load_weights(filepath)
 
 import cv2
+label_mp = list(training_set.class_indices.keys())
 
-#Image desease
-img_dss = cv2.imread("‪D:/ideal/data/validation/disease/disease_02.PNG")
+#Image desease test 
+img_dss = cv2.imread('D:/ideal/data/validation/disease/disease_08.png')
 cv2.imshow("predict",img_dss)
 cv2.waitKey()
 img_dss = cv2.resize(img_dss, (224, 224)) 
 
-print(classifier.predict(img_dss))
+pred = classifier.predict(np.array([img_dss]))
+print("Predicted class : ",label_mp[pred[0].argmax(axis=0)])
 
-""" #plot stats : training
+#Image desease healthy 
+img_hea = cv2.imread('D:/ideal/data/validation/healthy/healthy_12.png')
+cv2.imshow("predict",img_hea)
+cv2.waitKey()
+img_hea = cv2.resize(img_hea, (224, 224)) 
+
+
+pred1 = classifier.predict(np.array([img_hea]))
+print("Predicted class : ",label_mp[pred1[0].argmax(axis=0)])
+
+
+
+"""
+#plot stats : training
 
 sns.set()
 
@@ -153,4 +169,4 @@ plt.show()
 
 
 
- """
+"""
