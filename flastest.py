@@ -10,6 +10,8 @@ from keras.applications.vgg16 import VGG16, preprocess_input, decode_predictions
 from keras.preprocessing.image import load_img, img_to_array
 from flask import Flask, flash, request, redirect, url_for, send_from_directory
 from flask_pymongo import PyMongo
+from  utils import predict
+import cv2
 # from werkzeug.utils import secure_filename
 
 # UPLOAD_dossier = 'uploads/'
@@ -18,15 +20,18 @@ ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'svg'])
 #les extensions autorisés à être télécharger (ici on n'accepte que des images de type png, jpg, jpeg)
 
 app = Flask(__name__)
-database = MongoClient('127.0.0.1:27017').firstDb
-app.config['MONGO_URI']= 'mongodb://192.168.150.110:27017/firstDb'
+database = MongoClient('127.0.0.1:27017').ideal
+app.config['MONGO_URI']= 'mongodb://127.0.0.1:27017/ideal'
 mongo = PyMongo(app)
 
 def pred(fln):
-    fs = gridfs.GridFS(database)
+    '''fs = gridfs.GridFS(database)
+    print("filename : ",fln)
     with open('tmp.png', 'wb') as file_tmp:
         file_tmp.write(fs.find_one({'filename':fln}).read())
-    return os.popen(f"python3 predict_it.py").read()
+    image = cv2.imread("tmp.png")'''
+    image = cv2.imread(fln)
+    return predict(image)
 
 
 def fichier_autorise(filename):
@@ -39,9 +44,17 @@ def telechargeFichier():
     if request.method == "POST":
         file = request.files['file']
         if file and fichier_autorise(file.filename):
-            # with open('test.save', 'wb') as f:
-            #     f.write(mongo.send_file(file.filename).data)
-            return pred(file.filename)
+            #with open('test.save', 'wb') as f:
+            #    f.write(mongo.send_file(file.filename).data)
+            import os
+            from werkzeug.utils import secure_filename
+
+            # create the folders when setting up your app
+            os.makedirs(os.path.join(app.instance_path, 'upload'), exist_ok=True)
+
+            # when saving the file
+            file.save(os.path.join(app.instance_path, 'upload', secure_filename(file.filename)))
+            return pred(os.path.join(app.instance_path, 'upload', secure_filename(file.filename)))
 
     return '''
         <!doctype html>
@@ -55,6 +68,6 @@ def telechargeFichier():
 
 
 if __name__ == "__main__":
-    app.secret_key = 'secret'
+    app.secret_key = ''
     app.debug = True
-    app.run(host='0.0.0.0', port=80, threaded=False)
+    app.run(host='0.0.0.0', port=3000, threaded=False)

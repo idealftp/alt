@@ -1,0 +1,8 @@
+tensorflow==1.5
+keras==2.1.6
+pymongo
+flask
+flask_pymongo
+opencv-python
+matplotlib
+seaborn
